@@ -438,15 +438,90 @@ void DrawRend::rasterize_line( float x0, float y0,
                      Color color) {
 
   // Part 1: Fill this in
+    float dx = abs(x1-x0);
+    float dy = abs(y1-y0);
+    int sign_x = (x1-x0<0)? -1 : 1;
+    int sign_y = (y1-y0<0)? -1 : 1;
+    int swap = (dx < dy)?1:0;
+    if (swap) {
+        float temp = dx; dx=dy; dy =temp;
+    }
+    float err = 0.5*dx;
+    float x = x0;
+    float y = y0;
+
+    for (int i = 0; i < dx; i++) {
+        err = err + dy;
+        while (err >=0 ) {
+            if (swap) {
+                x += sign_x;
+            } else {
+                y += sign_y;
+            }
+            err -= dx;
+        }
+       
+        rasterize_point(x,y,color);
+        if (swap) {y += sign_y;} else {x += sign_x;}
+    }
+  
 
 }
 
+float DrawRend::x_on_line(float x0, float y0,
+        float x1, float y1, float y) {
+    // (y0-y)*(x1-x) = (y1-y)*(x0-x)
+    // (y1-y0)x = x0(y1-y)-x1(y0-y)
+    return (x0*(y1-y)-x1*(y0-y)) / (y1-y0);
+}
   // rasterize a triangle
 void DrawRend::rasterize_triangle( float x0, float y0,
                          float x1, float y1,
                          float x2, float y2,
                          Color color, Triangle *tri) {
   // Part 2: Fill in this function with basic triangle rasterization code
+  //rasterize_line(x0,y0,x1,y1,color);
+  //rasterize_line(x0,y0,x2,y2,color);
+  //rasterize_line(x2,y2,x1,y1,color);
+  float temp;
+  if (y1 < y0) {
+      temp = y0; y0 = y1; y1 = temp;
+      temp = x0; x0 = x1; x1 = temp;
+  }
+  if (y2 < y0) {
+      temp = y2; y2 = y0; y0 = temp;
+      temp = x2; x2 = x0; x0 = temp;
+  }
+  if (y2 < y1) {
+      temp = y2; y2 = y1; y1 = temp;
+      temp = x2; x2 = x1; x1 = temp;
+  }
+  float xx0,xx1,xx2;
+  float yy = ceil(y0);
+  if ((y0 < y1) && (y0 < y2)) {
+    while (yy <= y1) {
+      xx1 = x_on_line(x0,y0,x1,y1,yy);
+      xx2 = x_on_line(x0,y0,x2,y2,yy);
+      //rasterize_point(xx1,yy,color);
+      //rasterize_point(xx2,yy,color);
+      rasterize_line(xx1,yy,xx2,yy,color);
+      yy++;
+    }
+  }
+  yy = floor(y2);
+  if ((y0 < y1) && (y0 < y2)) {
+    while (yy >= y1) {
+      xx0 = x_on_line(x2,y2,x0,y0,yy);
+      xx1 = x_on_line(x2,y2,x1,y1,yy);
+      //rasterize_point(xx1,yy,color);
+      //rasterize_point(xx2,yy,color);
+      rasterize_line(xx0,yy,xx1,yy,color);
+      yy--;
+    }
+  }
+
+
+
   // Part 3: Add supersampling to antialias your triangles
   // Part 5: Add barycentric coordinates and use tri->color for shading when available
   // Part 6: Fill in a SampleParams struct with psm, lsm and pass it to the tri->color function

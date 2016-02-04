@@ -79,6 +79,8 @@ private:
   PixelSampleMethod psm;
   LevelSampleMethod lsm;
 
+  float x_on_line( float x0, float y0,
+                   float x1, float y1, float y);
 
   // Part 3: might need to add some variables and functions here
 
