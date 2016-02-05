@@ -57,6 +57,7 @@ void DrawRend::resize( size_t w, size_t h ) {
   width = w; height = h;
 
   framebuffer.resize(4 * w * h);
+  samplebuffer.resize(4 * w * h * sample_rate);
 
   float scale = min(width, height);
   ndc_to_screen(0,0) = scale; ndc_to_screen(0,2) = (width  - scale) / 2;
@@ -176,6 +177,8 @@ void DrawRend::keyboard_event( int key, int event, unsigned char mods ) {
       if (sample_rate < 16) {
         sample_rate = (int)(sqrt(sample_rate)+1)*(sqrt(sample_rate)+1);
         // Part 3: might need to add something here
+        samplebuffer.resize(4 * width * height * sample_rate);
+        memset(&samplebuffer[0], 255, sample_rate * 4 * width * height);
         redraw();
       }
       break;
@@ -183,6 +186,8 @@ void DrawRend::keyboard_event( int key, int event, unsigned char mods ) {
       if (sample_rate > 1) {
         sample_rate = (int)(sqrt(sample_rate)-1)*(sqrt(sample_rate)-1);
         // Part 3: might need to add something here
+        samplebuffer.resize(4 * width * height * sample_rate);
+        memset(&samplebuffer[0], 255, sample_rate * 4 * width * height);
         redraw();
       }
       break;
@@ -254,6 +259,7 @@ void DrawRend::write_screenshot() {
  */
 void DrawRend::redraw() {
   memset(&framebuffer[0], 255, 4 * width * height);
+  memset(&samplebuffer[0], 255, 4 * width * height * sample_rate);
 
   SVG &svg = *svgs[current_svg];
   svg.draw(this, ndc_to_screen*svg_to_ndc[current_svg]);
@@ -279,6 +285,45 @@ void DrawRend::redraw() {
  */
 void DrawRend::resolve() {
   // Part 3: Fill this in
+  memset(&framebuffer[0], 255, 4 * width * height);
+  int amp = sqrt(sample_rate);
+  float sum_r, sum_g, sum_b, sum_a;
+  int sx, sy;
+  for (int fx = 0; fx < width; fx++) {
+    for (int fy = 0; fy < height; fy++) {
+          
+      sum_r = 0;
+      sum_g = 0;
+      sum_b = 0;
+      sum_a = 0;
+      for (int i = 0; i < amp; i++) {
+        for (int j = 0; j < amp; j++) {
+           sx = fx * amp + i;
+           sy = fy * amp + j; 
+           unsigned char *p = &samplebuffer[0] + 4 * (sx + sy * width * amp);
+//           if (p[0] != 255) 
+//               cout << "(" << (int)p[0] << "," << (int)p[1] << "," << (int)p[2]
+//                   << "," << (int)p[3] << ")" << "i: " << i << " j:" << j << endl;
+           sum_r += p[0] * p[3];
+           sum_g += p[1] * p[3];
+           sum_b += p[2] * p[3];
+           sum_a += p[3];
+            
+        }
+      }  
+
+      unsigned char *p = &framebuffer[0] + 4 * (fx + fy * width);
+      if (sum_a > 0) {
+          p[0] = (uint8_t) (sum_r / sum_a);
+          p[1] = (uint8_t) (sum_g / sum_a);
+          p[2] = (uint8_t) (sum_b / sum_a);
+          p[3] = (uint8_t) (sum_a / sample_rate);
+      }
+      //rasterize_line(a.x, a.y, b.x, b.y, Color::Black);
+    }
+  //  cout << endl;
+  }
+  //cout << "================================" << endl;
 }
 
 /**
@@ -412,6 +457,26 @@ void DrawRend::move_view(float dx, float dy, float zoom) {
   // Part 4: Fill this in
 
 }
+void DrawRend::sample_point( float x, float y, Color color ) {
+  // fill in the nearest pixel
+  int sx = (int) floor(x);
+  int sy = (int) floor(y);
+  int amp = (int) sqrt(sample_rate);
+
+  // check bounds
+  if ( sx < 0 || sx >= width * amp ) return;
+  if ( sy < 0 || sy >= height * amp ) return;
+
+  //cout << sx << "," << sy << endl;
+
+  // perform alpha blending with previous value
+  unsigned char *p = &samplebuffer[0] + 4 * (sx + sy * width * amp);
+  float Ca = p[3] / 255., Ea = color.a;
+  p[0] = (uint8_t) (color.r * 255 * Ea + (1 - Ea) * p[0]);
+  p[1] = (uint8_t) (color.g * 255 * Ea + (1 - Ea) * p[1]);
+  p[2] = (uint8_t) (color.b * 255 * Ea + (1 - Ea) * p[2]);
+  p[3] = (uint8_t) ((1 - (1 - Ea) * (1 - Ca)) * 255);
+}
 
   // rasterize a point
 void DrawRend::rasterize_point( float x, float y, Color color ) {
@@ -483,6 +548,13 @@ void DrawRend::rasterize_triangle( float x0, float y0,
   //rasterize_line(x0,y0,x1,y1,color);
   //rasterize_line(x0,y0,x2,y2,color);
   //rasterize_line(x2,y2,x1,y1,color);
+  int amp = sqrt(sample_rate);
+  x0 *= amp; y0 *= amp;
+  x1 *= amp; y1 *= amp;
+  x2 *= amp; y2 *= amp;
+  cout << "(" << x0 << "," << y0 << ")-";
+  cout << "(" << x1 << "," << y1 << ")-";
+  cout << "(" << x2 << "," << y2 << ")"<<endl;
   float temp;
   if (y1 < y0) {
       temp = y0; y0 = y1; y1 = temp;
@@ -502,9 +574,11 @@ void DrawRend::rasterize_triangle( float x0, float y0,
     while (yy <= y1) {
       xx1 = x_on_line(x0,y0,x1,y1,yy);
       xx2 = x_on_line(x0,y0,x2,y2,yy);
-      //rasterize_point(xx1,yy,color);
-      //rasterize_point(xx2,yy,color);
-      rasterize_line(xx1,yy,xx2,yy,color);
+      if (xx1 > xx2) {
+          temp = xx1; xx1 = xx2; xx2 = temp;
+      }
+      for (float xx = ceil(xx1); xx < ceil(xx2); xx++)
+          sample_point(xx,yy,color);
       yy++;
     }
   }
@@ -513,9 +587,12 @@ void DrawRend::rasterize_triangle( float x0, float y0,
     while (yy >= y1) {
       xx0 = x_on_line(x2,y2,x0,y0,yy);
       xx1 = x_on_line(x2,y2,x1,y1,yy);
-      //rasterize_point(xx1,yy,color);
-      //rasterize_point(xx2,yy,color);
-      rasterize_line(xx0,yy,xx1,yy,color);
+      if (xx0 > xx1) {
+          temp = xx0; xx0 = xx1; xx1 = temp;
+      }
+      for (float xx = ceil(xx0); xx < ceil(xx1); xx++)
+          sample_point(xx,yy,color);
+      //rasterize_line(xx0,yy,xx1,yy,color);
       yy--;
     }
   }

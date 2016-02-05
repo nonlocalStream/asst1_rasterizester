@@ -43,6 +43,9 @@ class DrawRend : public Renderer {
   void set_view(float x, float y, float span);
   void move_view(float dx, float dy, float scale);
 
+  // Add a point to sample space
+  void sample_point( float x, float y, Color color );
+
   // rasterize a point
   void rasterize_point( float x, float y, Color color );
 
@@ -68,6 +71,7 @@ private:
   Matrix3x3 ndc_to_screen;
 
   std::vector<unsigned char> framebuffer;
+  std::vector<unsigned char> samplebuffer;
   size_t width, height;
 
   // UI state info
