@@ -315,12 +315,8 @@ void DrawRend::resolve() {
           p[2] = (uint8_t) (sum_b / sum_a);
           p[3] = (uint8_t) (sum_a / sample_rate);
       }
-//      Color c = Color (sum_r / sum_a / 255.0 , sum_g / sum_a /  255.0, sum_b / sum_a / 255.0, sum_a / sample_rate / 255.0);
-//      rasterize_point(fx, fy, c);
     }
-  //  cout << endl;
   }
-  //cout << "================================" << endl;
 }
 
 /**
@@ -512,7 +508,6 @@ void DrawRend::rasterize_line( float x0, float y0,
                      Color color) {
 
   // Part 1: Fill this in
-
     float dx = abs(x1-x0);
     float dy = abs(y1-y0);
     int sign_x = (x1-x0<0)? -1 : 1;
@@ -521,12 +516,12 @@ void DrawRend::rasterize_line( float x0, float y0,
     if (swap) {
         float temp = dx; dx=dy; dy =temp;
     }
-    float err = 0.5*dx;
-    float x = x0;
     float y = y0;
+    float x = x0;
+    float err = -0.5 * dx;
 
     for (int i = 0; i < dx; i++) {
-        err = err + dy;
+        rasterize_point(x,y,color);
         while (err >=0 ) {
             if (swap) {
                 x += sign_x;
@@ -535,12 +530,10 @@ void DrawRend::rasterize_line( float x0, float y0,
             }
             err -= dx;
         }
-       
-        rasterize_point(x,y,color);
+        err = err + dy;
         if (swap) {y += sign_y;} else {x += sign_x;}
     }
   
-
 }
 
 float DrawRend::x_on_line(float x0, float y0,
@@ -558,13 +551,11 @@ void DrawRend::rasterize_triangle( float x0, float y0,
   //rasterize_line(x0,y0,x1,y1,color);
   //rasterize_line(x0,y0,x2,y2,color);
   //rasterize_line(x2,y2,x1,y1,color);
+  // Part 3: Add supersampling to antialias your triangles
   int amp = sqrt(sample_rate);
   x0 *= amp; y0 *= amp;
   x1 *= amp; y1 *= amp;
   x2 *= amp; y2 *= amp;
-  cout << "(" << x0 << "," << y0 << ")-";
-  cout << "(" << x1 << "," << y1 << ")-";
-  cout << "(" << x2 << "," << y2 << ")"<<endl;
   float temp;
   if (y1 < y0) {
       temp = y0; y0 = y1; y1 = temp;
@@ -587,7 +578,7 @@ void DrawRend::rasterize_triangle( float x0, float y0,
       if (xx1 > xx2) {
           temp = xx1; xx1 = xx2; xx2 = temp;
       }
-      for (float xx = ceil(xx1); xx < ceil(xx2); xx++)
+      for (float xx = floor(xx1); xx <= floor(xx2); xx++)
           sample_point(xx,yy,color);
       yy++;
     }
@@ -600,16 +591,14 @@ void DrawRend::rasterize_triangle( float x0, float y0,
       if (xx0 > xx1) {
           temp = xx0; xx0 = xx1; xx1 = temp;
       }
-      for (float xx = ceil(xx0); xx < ceil(xx1); xx++)
+      for (float xx = floor(xx0); xx <= floor(xx1); xx++)
           sample_point(xx,yy,color);
-      //rasterize_line(xx0,yy,xx1,yy,color);
       yy--;
     }
   }
 
 
 
-  // Part 3: Add supersampling to antialias your triangles
   // Part 5: Add barycentric coordinates and use tri->color for shading when available
   // Part 6: Fill in a SampleParams struct with psm, lsm and pass it to the tri->color function
   // Part 7: Pass in correct barycentric differentials dx and dy to tri->color for mipmapping
