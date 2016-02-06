@@ -285,7 +285,6 @@ void DrawRend::redraw() {
  */
 void DrawRend::resolve() {
   // Part 3: Fill this in
-  memset(&framebuffer[0], 255, 4 * width * height);
   int amp = sqrt(sample_rate);
   float sum_r, sum_g, sum_b, sum_a;
   int sx, sy;
@@ -301,9 +300,6 @@ void DrawRend::resolve() {
            sx = fx * amp + i;
            sy = fy * amp + j; 
            unsigned char *p = &samplebuffer[0] + 4 * (sx + sy * width * amp);
-//           if (p[0] != 255) 
-//               cout << "(" << (int)p[0] << "," << (int)p[1] << "," << (int)p[2]
-//                   << "," << (int)p[3] << ")" << "i: " << i << " j:" << j << endl;
            sum_r += p[0] * p[3];
            sum_g += p[1] * p[3];
            sum_b += p[2] * p[3];
@@ -319,7 +315,8 @@ void DrawRend::resolve() {
           p[2] = (uint8_t) (sum_b / sum_a);
           p[3] = (uint8_t) (sum_a / sample_rate);
       }
-      //rasterize_line(a.x, a.y, b.x, b.y, Color::Black);
+//      Color c = Color (sum_r / sum_a / 255.0 , sum_g / sum_a /  255.0, sum_b / sum_a / 255.0, sum_a / sample_rate / 255.0);
+//      rasterize_point(fx, fy, c);
     }
   //  cout << endl;
   }
@@ -481,20 +478,32 @@ void DrawRend::sample_point( float x, float y, Color color ) {
   // rasterize a point
 void DrawRend::rasterize_point( float x, float y, Color color ) {
   // fill in the nearest pixel
-  int sx = (int) floor(x);
-  int sy = (int) floor(y);
+  int ori_sx = (int) floor(x);
+  int ori_sy = (int) floor(y);
 
   // check bounds
-  if ( sx < 0 || sx >= width ) return;
-  if ( sy < 0 || sy >= height ) return;
+  if ( ori_sx < 0 || ori_sx >= width ) return;
+  if ( ori_sy < 0 || ori_sy >= height ) return;
 
-  // perform alpha blending with previous value
-  unsigned char *p = &framebuffer[0] + 4 * (sx + sy * width);
-  float Ca = p[3] / 255., Ea = color.a;
-  p[0] = (uint8_t) (color.r * 255 * Ea + (1 - Ea) * p[0]);
-  p[1] = (uint8_t) (color.g * 255 * Ea + (1 - Ea) * p[1]);
-  p[2] = (uint8_t) (color.b * 255 * Ea + (1 - Ea) * p[2]);
-  p[3] = (uint8_t) ((1 - (1 - Ea) * (1 - Ca)) * 255);
+
+  // fill in all the supersamples for this pixel
+  int amp = sqrt(sample_rate);
+  for (int i = 0; i < amp; i++) {
+    for (int j = 0; j < amp; j++) {
+      int sx = ori_sx * amp + i;
+      int sy = ori_sy * amp + j;
+      sample_point(sx, sy, color);
+
+/*  // perform alpha blending with previous value
+      unsigned char *p = &framebuffer[0] + 4 * (sx + sy * width * amp);
+      float Ca = p[3] / 255., Ea = color.a;
+      p[0] = (uint8_t) (color.r * 255 * Ea + (1 - Ea) * p[0]);
+      p[1] = (uint8_t) (color.g * 255 * Ea + (1 - Ea) * p[1]);
+      p[2] = (uint8_t) (color.b * 255 * Ea + (1 - Ea) * p[2]);
+      p[3] = (uint8_t) ((1 - (1 - Ea) * (1 - Ca)) * 255);
+*/
+    }
+  }
 }
 
   // rasterize a line
@@ -503,6 +512,7 @@ void DrawRend::rasterize_line( float x0, float y0,
                      Color color) {
 
   // Part 1: Fill this in
+
     float dx = abs(x1-x0);
     float dy = abs(y1-y0);
     int sign_x = (x1-x0<0)? -1 : 1;
