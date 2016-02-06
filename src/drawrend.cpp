@@ -448,7 +448,10 @@ void DrawRend::set_view(float x, float y, float span) {
  */
 void DrawRend::move_view(float dx, float dy, float zoom) {
   // Part 4: Fill this in
-
+  float pspan = svg_to_ndc[current_svg](2,2)/2;
+  float px = pspan-svg_to_ndc[current_svg](0,2);
+  float py = pspan-svg_to_ndc[current_svg](1,2);
+  set_view(px-dx, py-dy, pspan * zoom); // minus because it denotes where the center of screen project to in normalized svg
 }
 void DrawRend::sample_point( float x, float y, Color color ) {
   // fill in the nearest pixel
