@@ -566,9 +566,12 @@ Color DrawRend::get_color( float x, float y,
         return color;
     } else {
         Vector2D baryxy = cal_bary(x,y,x0,y0,x1,y1,x2,y2);
+        Vector2D barydx = cal_bary(x+1,y,x0,y0,x1,y1,x2,y2);
+        Vector2D barydy = cal_bary(x,y+1,x0,y0,x1,y1,x2,y2);
         SampleParams sp = SampleParams();
         sp.psm = psm;
-        return tri->color(baryxy, Vector2D(), Vector2D(), sp);
+        sp.lsm = lsm;
+        return tri->color(baryxy, barydx, barydy, sp);
     }
 }
 

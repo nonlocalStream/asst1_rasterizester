@@ -1,5 +1,6 @@
 #include "texture.h"
 #include "CGL/color.h"
+#define square(a) a*a
 
 namespace CGL {
 
@@ -10,11 +11,38 @@ Color Texture::sample(const SampleParams &sp) {
   //          nearest or bilinear in mipmap level 0, conditional on sp.psm
   // Part 7: Fill in full sampling (including trilinear), 
   //          conditional on sp.psm and sp.lsm
+  int level;
+  Color (Texture::*sample_method)(Vector2D, int);
   switch (sp.psm) {
       case P_NEAREST: 
-          return sample_nearest(sp.uv, 0);
+          sample_method = &Texture::sample_nearest;
+          break;
       case P_LINEAR:     
-          return sample_bilinear(sp.uv, 0);
+          sample_method = &Texture::sample_bilinear;
+          break;
+  }
+  //return Color();
+  switch (sp.lsm) {
+      case L_ZERO:
+          //cout << "l_zero" <<endl;
+          return (*this.*sample_method)(sp.uv, 0);
+      case L_NEAREST:
+          level = round(get_level(sp));
+          //cout << "l_nearest" <<endl;
+          if (level < 0) {
+              level = 0;
+          } else {
+              cout << level << endl;
+          }
+          return (*this.*sample_method)(sp.uv, level);
+      case L_LINEAR:
+          //cout << "l_linear" <<endl;
+          float lev = get_level(sp);
+          level = floor(lev);
+          float dis = lev - level;
+          Color s0 = (*this.*sample_method)(sp.uv, level);
+          Color s1 = (*this.*sample_method)(sp.uv, level+1);
+          return lerp(dis, s0, s1);
   }
 }
 
@@ -22,11 +50,18 @@ Color Texture::sample(const SampleParams &sp) {
 // level to use for L_NEAREST or L_LINEAR filtering.
 float Texture::get_level(const SampleParams &sp) {
   // Part 7: Fill this in.
-  return 0.f;
+  //
+  float l1 = sqrt(square(sp.du[0]*width)+square(sp.dv[0]*height));
+  float l2 = sqrt(square(sp.du[1]*width)+square(sp.dv[1]*height));
+  float l = (l1 > l2)? l1 :l2;
+  float level = log(l)/log(2);
+  if (level >= mipmap.size())
+      level = mipmap.size()-1;
+  return level;
 }
 
 Color Texture::get_texel(int x, int y, int level) {
-  unsigned char *p = &(mipmap[level].texels[0]) + 4 * (x + y * width);
+  unsigned char *p = &(mipmap[level].texels[0]) + 4 * (x + y * mipmap[level].width);
   float r = (float) p[0] / 255.;
   float g = (float) p[1] / 255.;
   float b = (float) p[2] / 255.;
@@ -43,12 +78,14 @@ Color Texture::get_texel(int x, int y, int level) {
 // and returns the nearest pixel to (u,v)
 Color Texture::sample_nearest(Vector2D uv, int level) {
   // Part 6: Fill this in.
-  int x = (int) round(uv[0] * width);
+  int w = mipmap[level].width;
+  int h = mipmap[level].height;
+  int x = (int) round(uv[0] * w);
   if (x < 0) x = 0;
-  if (x >= width) x = width - 1;
-  int y = (int) round(uv[1] * height);
+  if (x >= w) x = w - 1;
+  int y = (int) round(uv[1] * h);
   if (y < 0) y = 0;
-  if (y >= width) y = width - 1;
+  if (y >= h) y = h - 1;
   return get_texel(x, y, level);
 }
 

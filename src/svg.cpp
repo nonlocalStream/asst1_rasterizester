@@ -68,6 +68,10 @@ Color TexTri::color(Vector2D xy, Vector2D dx, Vector2D dy, SampleParams sp) {
   double c = 1 - a - b;
   Vector2D uv = a*a_uv + b*b_uv + c*c_uv;
   sp.uv = uv;
+  dx -= xy;
+  dy -= xy;
+  sp.du = Vector2D(dx[0],dy[0]);
+  sp.dv = Vector2D(dx[1],dy[1]);
   return tex->sample(sp);
 }
 
