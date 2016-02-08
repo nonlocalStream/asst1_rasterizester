@@ -63,7 +63,11 @@ Color ColorTri::color(Vector2D xy, Vector2D dx, Vector2D dy, SampleParams sp) {
 Color TexTri::color(Vector2D xy, Vector2D dx, Vector2D dy, SampleParams sp) {
   // Part 6: Fill in the uv member of sp and pass it along to tex->sample.
   // Part 7: Fill in the du and dv members of sp as well.
-
+  double a = xy[0];
+  double b = xy[1];
+  double c = 1 - a - b;
+  Vector2D uv = a*a_uv + b*b_uv + c*c_uv;
+  sp.uv = uv;
   return tex->sample(sp);
 }
 

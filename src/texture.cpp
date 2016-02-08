@@ -10,8 +10,9 @@ Color Texture::sample(const SampleParams &sp) {
   //          nearest or bilinear in mipmap level 0, conditional on sp.psm
   // Part 7: Fill in full sampling (including trilinear), 
   //          conditional on sp.psm and sp.lsm
-
-  return Color();
+  
+  //cout << "hello";
+  return sample_nearest(sp.uv, 0);
 }
 
 // Given sp.du and sp.dv, returns the appropriate mipmap
@@ -21,18 +22,46 @@ float Texture::get_level(const SampleParams &sp) {
   return 0.f;
 }
 
+Color Texture::get_texel(int x, int y, int level) {
+  unsigned char *p = &(mipmap[level].texels[0]) + 4 * (x + y * width);
+  float r = (float) p[0] / 255.;
+  float g = (float) p[1] / 255.;
+  float b = (float) p[2] / 255.;
+  float a = (float) p[3] / 255.;
+/*  cout << "r:" << (int) p[0]
+       << " g:" << (int) p[1]
+       << " b:" << (int) p[2] 
+       << " a:" << (int) p[3] << endl;
+       */
+  return Color(r,g,b,a);
+
+}
 // Indexes into the level'th mipmap
 // and returns the nearest pixel to (u,v)
 Color Texture::sample_nearest(Vector2D uv, int level) {
   // Part 6: Fill this in.
-  return Color();
+  int x = (int) round(uv[0] * width);
+  if (x < 0) x = 0;
+  if (x >= width) x = width - 1;
+  int y = (int) round(uv[1] * height);
+  if (y < 0) y = 0;
+  if (y >= width) y = width - 1;
+  return get_texel(x, y, level);
 }
 
+Color Texture::lerp(float ratio, Color c1, Color c2) {
+    return ratio*c1 + (1-ratio)*c2;
+}
 // Indexes into the level'th mipmap
 // and returns a bilinearly weighted combination of
 // the four pixels surrounding (u,v)
 Color Texture::sample_bilinear(Vector2D uv, int level) {
-  // Part 6: Fill this in.
+  // Part 6: Fill this in
+  float x = round(uv[0] * width);  
+  float y = round(uv[1] * height);
+  Color u00 = get_texel
+
+  u01 = 
   return Color();
 }
 

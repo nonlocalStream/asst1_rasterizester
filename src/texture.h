@@ -51,6 +51,9 @@ struct Texture {
   Color sample(const SampleParams &sp);
   float get_level(const SampleParams &sp);
 
+  // Part 6
+  Color get_texel(int x, int y, int level);
+
   Color sample_nearest(Vector2D uv, int level = 0);
 
   Color sample_bilinear(Vector2D uv, int level = 0);
