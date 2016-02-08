@@ -47,7 +47,10 @@ void Triangle::draw(DrawRend *dr, Matrix3x3 global_transform) {
  */
 Color ColorTri::color(Vector2D xy, Vector2D dx, Vector2D dy, SampleParams sp) {
   // Part 5: Fill this in.
-  return Color();
+  double a = xy[0];
+  double b = xy[1];
+  double c = 1 - a - b;
+  return a*ac + b*bc + c*cc;
 }
 
 /** 

@@ -83,12 +83,22 @@ private:
   PixelSampleMethod psm;
   LevelSampleMethod lsm;
 
+  // Part 3: might need to add some variables and functions here
+
   float x_on_line( float x0, float y0,
                    float x1, float y1, float y);
 
-  // Part 3: might need to add some variables and functions here
+  // Part 5
+Vector2D cal_bary( float x, float y,
+                         float x0, float y0,
+                         float x1, float y1,
+                         float x2, float y2);
 
-
+Color get_color( float x, float y,
+                         float x0, float y0,
+                         float x1, float y1,
+                         float x2, float y2,
+                         Color color, Triangle *tri);
 };
 
 } // namespace CGL

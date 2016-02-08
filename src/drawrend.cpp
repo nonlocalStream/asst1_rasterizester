@@ -545,6 +545,33 @@ float DrawRend::x_on_line(float x0, float y0,
     // (y1-y0)x = x0(y1-y)-x1(y0-y)
     return (x0*(y1-y)-x1*(y0-y)) / (y1-y0);
 }
+
+
+Vector2D DrawRend::cal_bary( float x, float y,
+                         float x0, float y0,
+                         float x1, float y1,
+                         float x2, float y2) {
+    double a = (-(x-x1)*(y2-y1) + (y-y1)*(x2-x1)) /
+               (-(x0-x1)*(y2-y1)+(y0-y1)*(x2-x1));
+    double b = (-(x-x2)*(y0-y2) + (y-y2)*(x0-x2)) /
+               (-(x1-x2)*(y0-y2)+(y1-y2)*(x0-x2));
+    return Vector2D(a,b);
+      
+}
+
+Color DrawRend::get_color( float x, float y,
+                         float x0, float y0,
+                         float x1, float y1,
+                         float x2, float y2,
+                         Color color, Triangle *tri) {
+    if (tri == NULL) {
+        return color;
+    } else {
+        Vector2D baryxy = cal_bary(x,y,x0,y0,x1,y1,x2,y2);
+        return tri->color(baryxy, Vector2D(), Vector2D(), SampleParams());
+    }
+}
+
   // rasterize a triangle
 void DrawRend::rasterize_triangle( float x0, float y0,
                          float x1, float y1,
@@ -581,8 +608,10 @@ void DrawRend::rasterize_triangle( float x0, float y0,
       if (xx1 > xx2) {
           temp = xx1; xx1 = xx2; xx2 = temp;
       }
-      for (float xx = floor(xx1); xx <= floor(xx2); xx++)
-          sample_point(xx,yy,color);
+      for (float xx = floor(xx1); xx <= floor(xx2); xx++) {
+          Color c = get_color(xx,yy,x0,y0,x1,y1,x2,y2,color,tri);
+          sample_point(xx,yy,c);
+      }
       yy++;
     }
   }
@@ -594,8 +623,10 @@ void DrawRend::rasterize_triangle( float x0, float y0,
       if (xx0 > xx1) {
           temp = xx0; xx0 = xx1; xx1 = temp;
       }
-      for (float xx = floor(xx0); xx <= floor(xx1); xx++)
-          sample_point(xx,yy,color);
+      for (float xx = floor(xx0); xx <= floor(xx1); xx++) { 
+          Color c = get_color(xx,yy,x0,y0,x1,y1,x2,y2,color, tri);
+          sample_point(xx,yy,c);
+      }
       yy--;
     }
   }
