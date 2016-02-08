@@ -10,9 +10,12 @@ Color Texture::sample(const SampleParams &sp) {
   //          nearest or bilinear in mipmap level 0, conditional on sp.psm
   // Part 7: Fill in full sampling (including trilinear), 
   //          conditional on sp.psm and sp.lsm
-  
-  //cout << "hello";
-  return sample_nearest(sp.uv, 0);
+  switch (sp.psm) {
+      case P_NEAREST: 
+          return sample_nearest(sp.uv, 0);
+      case P_LINEAR:     
+          return sample_bilinear(sp.uv, 0);
+  }
 }
 
 // Given sp.du and sp.dv, returns the appropriate mipmap
@@ -49,20 +52,27 @@ Color Texture::sample_nearest(Vector2D uv, int level) {
   return get_texel(x, y, level);
 }
 
-Color Texture::lerp(float ratio, Color c1, Color c2) {
-    return ratio*c1 + (1-ratio)*c2;
+Color Texture::lerp(float dis, Color c1, Color c2) {
+    // dis is the ratio of distance to c1 / distance between c1 and c2
+    return (1-dis)*c1 + dis*c2;
 }
 // Indexes into the level'th mipmap
 // and returns a bilinearly weighted combination of
 // the four pixels surrounding (u,v)
 Color Texture::sample_bilinear(Vector2D uv, int level) {
   // Part 6: Fill this in
-  float x = round(uv[0] * width);  
-  float y = round(uv[1] * height);
-  Color u00 = get_texel
-
-  u01 = 
-  return Color();
+  float x = uv[0] * width;  
+  float y = uv[1] * height;
+  Color u00 = get_texel(floor(x), floor(y), level);
+  Color u01 = get_texel(floor(x), ceil(y), level);
+  Color u10 = get_texel(ceil(x), floor(y), level);
+  Color u11 = get_texel(ceil(x), ceil(y), level);
+  float s = x - floor(x);
+  float t = y - floor(y);
+  Color u0 = lerp(s, u00, u10);
+  Color u1 = lerp(s, u01, u11);
+  Color u = lerp(t, u0, u1);
+  return u;
 }
 
 
