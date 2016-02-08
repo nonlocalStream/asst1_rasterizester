@@ -555,6 +555,9 @@ Vector2D DrawRend::cal_bary( float x, float y,
                (-(x0-x1)*(y2-y1)+(y0-y1)*(x2-x1));
     double b = (-(x-x2)*(y0-y2) + (y-y2)*(x0-x2)) /
                (-(x1-x2)*(y0-y2)+(y1-y2)*(x0-x2));
+    if ((a>1)||(b>1)){
+        cout << a << "," << b << endl;
+    }
     return Vector2D(a,b);
       
 }
@@ -586,6 +589,11 @@ void DrawRend::rasterize_triangle( float x0, float y0,
   x0 *= amp; y0 *= amp;
   x1 *= amp; y1 *= amp;
   x2 *= amp; y2 *= amp;
+  // record the original coordinates to make sure
+  // them in tri->color in correct order
+  float ox0,oy0,ox1,oy1,ox2,oy2;
+  ox0 = x0; ox1 = x1; ox2 = x2;
+  oy0 = y0; oy1 = y1; oy2 = y2;
   float temp;
   if (y1 < y0) {
       temp = y0; y0 = y1; y1 = temp;
@@ -609,7 +617,7 @@ void DrawRend::rasterize_triangle( float x0, float y0,
           temp = xx1; xx1 = xx2; xx2 = temp;
       }
       for (float xx = floor(xx1); xx <= floor(xx2); xx++) {
-          Color c = get_color(xx,yy,x0,y0,x1,y1,x2,y2,color,tri);
+          Color c = get_color(xx,yy,ox0,oy0,ox1,oy1,ox2,oy2,color,tri);
           sample_point(xx,yy,c);
       }
       yy++;
@@ -624,7 +632,7 @@ void DrawRend::rasterize_triangle( float x0, float y0,
           temp = xx0; xx0 = xx1; xx1 = temp;
       }
       for (float xx = floor(xx0); xx <= floor(xx1); xx++) { 
-          Color c = get_color(xx,yy,x0,y0,x1,y1,x2,y2,color, tri);
+          Color c = get_color(xx,yy,ox0,oy0,ox1,oy1,ox2,oy2,color, tri);
           sample_point(xx,yy,c);
       }
       yy--;
