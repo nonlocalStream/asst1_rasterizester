@@ -463,7 +463,6 @@ void DrawRend::sample_point( float x, float y, Color color ) {
   if ( sx < 0 || sx >= width * amp ) return;
   if ( sy < 0 || sy >= height * amp ) return;
 
-  //cout << sx << "," << sy << endl;
 
   // perform alpha blending with previous value
   unsigned char *p = &samplebuffer[0] + 4 * (sx + sy * width * amp);
@@ -555,11 +554,7 @@ Vector2D DrawRend::cal_bary( float x, float y,
                (-(x0-x1)*(y2-y1)+(y0-y1)*(x2-x1));
     double b = (-(x-x2)*(y0-y2) + (y-y2)*(x0-x2)) /
                (-(x1-x2)*(y0-y2)+(y1-y2)*(x0-x2));
-    if ((a>1)||(b>1)){
-        cout << a << "," << b << endl;
-    }
     return Vector2D(a,b);
-      
 }
 
 Color DrawRend::get_color( float x, float y,
@@ -609,7 +604,7 @@ void DrawRend::rasterize_triangle( float x0, float y0,
   }
   float xx0,xx1,xx2;
   float yy = ceil(y0);
-  if ((y0 < y1) && (y0 < y2)) {
+  if (y0 < y1) {
     while (yy <= y1) {
       xx1 = x_on_line(x0,y0,x1,y1,yy);
       xx2 = x_on_line(x0,y0,x2,y2,yy);
@@ -624,7 +619,7 @@ void DrawRend::rasterize_triangle( float x0, float y0,
     }
   }
   yy = floor(y2);
-  if ((y0 < y1) && (y0 < y2)) {
+  if (y1 < y2) {
     while (yy >= y1) {
       xx0 = x_on_line(x2,y2,x0,y0,yy);
       xx1 = x_on_line(x2,y2,x1,y1,yy);
