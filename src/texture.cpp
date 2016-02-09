@@ -29,16 +29,15 @@ Color Texture::sample(const SampleParams &sp) {
       case L_NEAREST:
           level = round(get_level(sp));
           //cout << "l_nearest" <<endl;
-          if (level < 0) {
-              level = 0;
-          } else {
-              cout << level << endl;
-          }
+          cout << "sample():" << level << endl;
           return (*this.*sample_method)(sp.uv, level);
       case L_LINEAR:
           //cout << "l_linear" <<endl;
           float lev = get_level(sp);
           level = floor(lev);
+          if (level == mipmap.size() -1) {
+            return (*this.*sample_method)(sp.uv, level);
+          }
           float dis = lev - level;
           Color s0 = (*this.*sample_method)(sp.uv, level);
           Color s1 = (*this.*sample_method)(sp.uv, level+1);
@@ -55,8 +54,13 @@ float Texture::get_level(const SampleParams &sp) {
   float l2 = sqrt(square(sp.du[1]*width)+square(sp.dv[1]*height));
   float l = (l1 > l2)? l1 :l2;
   float level = log(l)/log(2);
-  if (level >= mipmap.size())
+  cout << "max:" <<mipmap.size()<<endl;
+  if (level > mipmap.size()-1)
       level = mipmap.size()-1;
+  if (level < 0) {
+      level = 0;
+  }
+  cout << "get_level:" << level << endl;
   return level;
 }
 
