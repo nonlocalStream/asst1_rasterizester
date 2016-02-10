@@ -67,11 +67,13 @@ Color TexTri::color(Vector2D xy, Vector2D dx, Vector2D dy, SampleParams sp) {
   double b = xy[1];
   double c = 1 - a - b;
   Vector2D uv = a*a_uv + b*b_uv + c*c_uv;
+  Vector2D dxuv = dx[0]*a_uv + dx[1]*b_uv + (1-dx[0]-dx[1])*c_uv;
+  Vector2D dyuv = dy[0]*a_uv + dy[1]*b_uv + (1-dy[0]-dy[1])*c_uv;
   sp.uv = uv;
-  dx -= xy;
-  dy -= xy;
-  sp.du = Vector2D(dx[0],dy[0]);
-  sp.dv = Vector2D(dx[1],dy[1]);
+  dxuv -= uv;
+  dyuv -= uv;
+  sp.du = Vector2D(dxuv[0],dyuv[0]);
+  sp.dv = Vector2D(dxuv[1],dyuv[1]);
   return tex->sample(sp);
 }
 
