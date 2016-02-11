@@ -27,8 +27,8 @@ Matrix3x3 scale(float sx, float sy) {
 // The input argument is in degrees counterclockwise
 Matrix3x3 rotate(float deg) {
     float r = deg * PI / 180;
-	return Matrix3x3(cos(deg), -sin(deg),0,
-                     sin(deg), cos(deg), 0,
+	return Matrix3x3(cos(r), -sin(r),0,
+                     sin(r), cos(r), 0,
                      0       ,        0, 1);
 }
 
