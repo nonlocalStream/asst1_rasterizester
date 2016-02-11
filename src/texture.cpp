@@ -109,8 +109,8 @@ Color Texture::sample_bilinear(Vector2D uv, int level) {
   float y = uv[1] * h;
   int floor_x = (floor(x) < 0)? 0: floor(x);
   int floor_y = (floor(y) < 0)? 0: floor(y);
-  int ceil_x = (ceil(x) >= w)? w-1: floor(x);
-  int ceil_y = (ceil(y) >= h)? h-1: floor(y);
+  int ceil_x = (ceil(x) >= w)? w-1: ceil(x);
+  int ceil_y = (ceil(y) >= h)? h-1: ceil(y);
   Color u00 = get_texel(floor_x, floor_y, level);
   Color u01 = get_texel(floor_x, ceil_y, level);
   Color u10 = get_texel(ceil_x, floor_y, level);
