@@ -9,40 +9,84 @@
       padding-left: 100px;  
     }  
   </style> 
-<title>Your Name  |  CS 184</title>
+<title>Chuqian Li  |  CS 184</title>
 <meta http-equiv="content-type" content="text/html; charset=utf-8" />
 <link rel="stylesheet" type="text/css" href="style.css" media="screen" />
 </head>
 <body>
 <br />
 <h1 align="middle">Assignment 1: Rasterizester</h1>
-    <h2 align="middle">Your Name</h2>
+    <h2 align="middle">Chuqian Li(Rita)</h2>
 
     <div class="padded">
-        <p>Use this section to write an overview of the assignment. All of the text in your write-up should be <em>in your own words</em>. If you need to add additional HTML features to this document, you can search the <a href="http://www.w3schools.com/">http://www.w3schools.com/</a> website for instructions. To edit the HTML, you can just copy and paste existing chunks and fill in the text and image file names appropriately.</p>
+        <p> This assignment is mainly about rasterization, anti-aliasing and diffrent texture mapping schemes. The first two parts are about rasterizing lines and triangles. Part 3 investigates anti-aliasing with supersampling. Part 4 and 5 are about transformations and barycentric coordinates. Part 6 and 7 investigate texture mapping by using different sampling scheme and mipmap.
+<!--         <p>Use this section to write an overview of the assignment. All of the text in your write-up should be <em>in your own words</em>. If you need to add additional HTML features to this document, you can search the <a href="http://www.w3schools.com/">http://www.w3schools.com/</a> website for instructions. To edit the HTML, you can just copy and paste existing chunks and fill in the text and image file names appropriately.</p>
         <o>The website writeup is intended to be a self-contained walkthrough of the assignment: we want this to be a piece of work which showcases your understanding of relevant concepts through both rendered images as well as written explanations about what you did to complete each part of the assignment. Try to be as clear and organized as possible when writing about your own output files or extensions to the assignment. We want to understand what you've achieved and how you've done it!</p> 
         <p>If you are well-versed in web development, feel free to ditch this template and make a better looking page. Just make sure that you include all the components as we've laid them out here. </p>
-        <p>For required images, keep the image size fixed at the native width of the file to avoid artifacts. You might want to adjust your rasterizester window size down to be less than 1000 pixels wide if you are working on a retina display screen, since the 1920 by 1280 images will be enormous on normal monitors.</p>
+        <p>For required images, keep the image size fixed at the native width of the file to avoid artifacts. You might want to adjust your rasterizester window size down to be less than 1000 pixels wide if you are working on a retina display screen, since  -->the 1920 by 1280 images will be enormous on normal monitors.</p>
 
     <h2 align="middle">Part 1: Rasterizing Lines</h2>
-        <p>Describe what you did in Part 1. Show your result here. You could talk about which line rasterizing algorithm you used, any issues you ran into and had to debug (with example images), and any clever modifications you made to the algorithm to reduce the number of special cases.</p>
+        <p> In this part, I use Bresenham's algorithm to rasterize line (x0,y0)-(x1,y1). The basic idea is to start at (floor(x0), floor(y0)), increase x by 1 each time. I have an error variable that increases by dy/dx each time each time the x increases. When the error variable is bigger than 0.5, y is increased by 1.
+        <p align="middle"><pre align="middle">error + dy/dx < 0.5</pre></p>
+        <p>Because divison by floating points is prone to errors. We multiply both sides by dx and get:
+        <p align="middle"><pre align="middle">error*dx + dy < 0.5*dx</pre></p>
+        <p>However this only works when x1-x0 = dx > 0, y1-y0 = dy > 0, and dx >= dy. So I got:
+
+
         <div align="left">
             <table style="width=100%">
                 <tr>
                     <td align="middle">
-                    <img src="images/example_image.jpg" width="800px" />
-                    <figcaption align="middle">Results Caption: include at least one png of svg/basic/test2.svg in this section</figcaption>
+                    <img src="images/p1_1.png" width="800px" />
+                    <figcaption align="middle">Figure 1.1: Basic algorithm only works in octant</figcaption>
                 </tr>
             </table>
         </div>
-        <p>Here is an example of how to include a simple formula:</p>
-        <p align="middle"><pre align="middle">a^2 + b^2 = c^2</pre></p>
-        <p>or, alternatively, you can include an image of a LaTex formula.</p>
+        <p>So I used a generalized version of Bresenham's algorithm. Instead of moving increasing x and y. Increase x and y by sign(x) and sign(y) where sign(i) = 1 if i >=0, -1 if i < 0. Also instead of increasing x each time, increase x only if dx >= dy and increase y when dy > dx. Also when dy > dx, multiply both sides of inequality by dy instead dx. With this modifications, I got: </p>
+        <div align="left">
+            <table style="width=100%">
+                <tr>
+                    <td align="middle">
+                    <img src="images/p1_2.png" width="800px" />
+                    <figcaption align="middle">Figure 1.1: Basic algorithm only works in octant</figcaption>
+                </tr>
+            </table>
+        </div>
 
     <h2 align="middle">Part 2: Rasterizing single-color triangles</h2>
-        <p>Describe what you did in Part 2. Show your result here. Explain any bugs you had to work through, with pictures if possible. Explain any special optimizations you did beyond simple bounding box triangle rasterization, with a timing comparison table (we suggest using the c++ clock() function around the svg.draw() command in DrawRend::redraw() to compare millisecond timings with your various optimizations off and on).</p>
-        <p>Here is an example table. You could put timing comparisons here, for example.</p>
+        <p>In this part, I'm rasterizing triangle given its 3 vertices (x0,y0),(x1,y1),(x2,y2).</p>
+        <p>The basic idea is to split the triangle into 2 triangles and rasterize row by row. For each row, calculate the two ends of the row using the following formula, where (x0,y0)-(x1,y1) is one side of triangle, y is the current row's y coordinate and (x,y) is the intersection: </p>
+        <p align="middle"><pre align="middle">(y0-y)*(x1-x) = (y1-y)*(x0-x)</pre></p>
+        <p> Say the two ends of the row is x_left and x_right. Either use rasterize_line in part 1 or rasterize the row by filling each pixel between x_left and x_right.</p>
+        <p> For some reason, using rasterize_line in part 1 gives me white cracks. This could be caused by the edge cases of triangle's edges or floating point operations. Filling each pixel between the two ends avoid white cracks. Compare:</p>
+
         <div align="left">
+            <table style="width=100%">
+                <tr>
+                    <td align="middle">
+                    <img src="images/p2_1.png" width="533px" />
+                    <figcaption align="middle">Figure 2.1: Fill rows with rasterize_line in part 1</figcaption>
+
+                    <td align="middle">
+                    <img src="images/p2_2.png" width="533px" />
+                    <figcaption align="middle">Figure 2.2: Fill rows by filling each pixel between the ends</figcaption>
+                </tr>
+            </table>
+        </div>
+        <p> So I stick to filling each pixels and get:</p>
+        <div align="left">
+            <table style="width=100%">
+                <tr>
+                    <td align="middle">
+                    <img src="images/p2_3.png" width="800px" />
+                    <figcaption align="middle">Figure 2.3: Results for triangles</figcaption>
+ 
+                </tr>
+            </table>
+        </div>
+   <!--      <p>Describe what you did in Part 2. Show your result here. Explain any bugs you had to work through, with pictures if possible. Explain any special optimizations you did beyond simple bounding box triangle rasterization, with a timing comparison table (we suggest using the c++ clock() function around the svg.draw() command in DrawRend::redraw() to compare millisecond timings with your various optimizations off and on).</p> -->
+        
+<!--         <div align="left">
             <table style="width=100%" border="1px" cellpadding="10px">
                 <tr>
                     <td>
@@ -60,19 +104,122 @@
                     <p>Row 2, Col 3</p>
                 </tr>
             </table>
-        </div>
+        </div> -->
+
 
     <h2 align="middle">Part 3: Antialiasing triangles</h2>
-        <p>Describe what you did in Part 3. Show your result here. Explain any bugs you had to work through, with pictures if possible. Explain the basic structure of the modifications you made to the DrawRend rasterization pipeline in order to implement supersampling. If you implement alternative antialiasing methods, describe them and include comparison pictures demonstrating the difference between your method and grid-based supersampling.</p>
+        <p>Looking at Figure 2.3, you can see that the sides of the triangle become jittered and the skinny triangles become discontinuous. In order to mitigate those sampling artifects, aka antialiasing, I used grid supersampling. The easiest way to do this is to multiply the coordinates by sqrt(sample_rate) and rasterize it in a super sampling buffer, basically an enlarged image. Compress the super sampling buffer by taking averages of the corresponding pixels and copy the final image into the frame buffer.</p>
+        <p>To averaging over sample_rate pixels, use weighted average with alpha as weight ((R,G,B,A) is the averaged pixel and (r_i, g_i, b_i, a_i) are super samples):</p>
+        <p align="middle"><pre align="middle"> R = sum(r_i * a_i)</pre></p>
+        <p align="middle"><pre align="middle"> G = sum(g_i * a_i)</pre></p>
+        <p align="middle"><pre align="middle"> B = sum(b_i * a_i)</pre></p>
+        <p align="middle"><pre align="middle"> A = sum(a_i)/sample_rate</pre></p>
+        <p>New struct defined: samplebuffer - Store the enlarged super sample image</p>
+        <p>New functions defined: 
+        <p>sample_point - Instead of writing to framebuffer, write super samples to samplebuffer
+        <p>resolve - Average the supersamples and write to framebuffer
+        </p>
+        <div align="left">
+            <table style="width=100%">
+                <tr>
+                    <td align="middle">
+                    <img src="images/p3_1.png" width="800px" />
+                    <figcaption align="middle">Figure 3.1: Supersample rate 1 per pixel.</figcaption>
+                </tr>
+                <tr>
+                    <td align="middle">
+                    <img src="images/p3_2.png" width="800px" />
+                    <figcaption align="middle">Figure 3.1: Supersample rate 4 per pixel.</figcaption>
+                </tr>
+                <tr>
+                    <td align="middle">
+                    <img src="images/p3_4.png" width="800px" />
+                    <figcaption align="middle">Figure 3.1: Supersample rate 16 per pixel.</figcaption>
+                </tr>
+
+            </table>
+        </div>
+        <p> One mistake I made was that when I tried to access pixel (sx, sy) in the samplebuffer, I forgot to use the new width, width*sqrt(sample_rate). So I got multiple objects when increasing sample_rate, which is actually kind of cool. </p>
+        <div align="left">
+            <table style="width=100%">
+                <tr>
+                    <td align="middle">
+                    <img src="images/p3_5.png" width="800px" />
+                    <figcaption align="middle">Figure 3.1: Supersample rate 1 per pixel.</figcaption>
+                </tr>
+                <tr>
+                    <td align="middle">
+                    <img src="images/p3_6.png" width="800px" />
+                    <figcaption align="middle">Figure 3.1: Supersample rate 4 per pixel.</figcaption>
+                </tr>
+                <tr>
+                    <td align="middle">
+                    <img src="images/p3_7.png" width="800px" />
+                    <figcaption align="middle">Figure 3.1: Supersample rate 9 per pixel.</figcaption>
+                </tr>
+
+            </table>
+        </div>
+
 
     <h2 align="middle">Part 4: Transforms</h2>
         <p>Describe what you did in Part 4. Show your result here. Explain any bugs you had to work through, with pictures if possible. Describe the new svg file you created, and show the rasterized result. Explain the reasoning behind your use of the transform stack in your new file. If you added any extra features to the GUI, describe them, and depict the result if it is visualizable (e.g. if you add rotation controls).</p>
 
     <h2 align="middle">Part 5: Barycentric coordinates</h2>
-        <p>Describe what you did in Part 5. Introduce and explain barycentric coordinates, perhaps with an svg file that plots a single triangle with one red, one green, and one blue vertex. Show your result here. Explain any bugs you had to work through, with pictures if possible. Include at least one png of svg/basic/test7.svg. If you make any additional images with color gradients, include them.</p>
+        <p>Calculate the barcentric coordinates alpha, beta using:</p>
+        <p align="middle"><pre align="middle">
+        <img src="images/p5_1.png"/ width=500px>
+        </pre></p>
+        <p>Interpolate the colors using:
+        <p align="middle"><pre align="middle"> 
+            Color(x,y) = alpha*Color_A + beta*Color_B + gamma*Color_C
+        </pre></p>
+        <div align="left">
+            <table style="width=100%">
+                <tr>
+                    <td align="middle">
+                    <img src="images/p5_2.png" width="800px" />
+                    <figcaption align="middle">Figure 5.2: Color interpolation using barycentric coordinates</figcaption>
+
+                </tr>
+            </table>
+        </div>
+        
 
     <h2 align="middle">Part 6: Pixel sampling for texture mapping</h2>
-        <p>Describe what you did in Part 6. Discuss the two different pixel sampling methods. Show a good example from svg/texmap/ of a case where bilinear looks much better than nearest sampling. Talk about when there will be a large difference between the two methods and when the difference will not matter.</p>
+        <p> Use barycentric coordinates to calculate the texel (u,v) on texture space that corresponds to each pixel (x,y) on screen space.
+        <p> u and v is originally calculated as float numbers. Nearest pixel sampling choose the texel that's nearest to u and v. Bilinear pixel interpolation sampling linearly interpolate between (floor(u), floor(v)), (floor(u), ceil(v)),(ceil(u), floor(v)),(ceil(u), ceil(v)) using:</p>
+        <p align="middle"><pre align="middle">
+        <img src="images/p7_1.png"/ width=500px>
+        </pre></p>
+        <p>In case of texture magnification, a texture image is enlarged on the screen space. The texture image doesn't have enough texels to render a high-resolution screen image. In this case, bilinear pixel interpolation calculate the intermediate color between two texels and thus render a much smoother image than nearest pixel.</p>
+        <p>In case of texture minification, the texture image is large enough or has enough resolution. So the two sampling method don't differ much.</p>
+        <p>Supersampling also average over multiple samples and thus has similar effects to bilinear interpolation. Thus at high sample_rate, the difference is also much smallar. Compare: </p>
+        <div align="left">
+            <table style="width=100%">
+                <tr>
+                    <td align="middle">
+                    <img src="images/p6_1.png" width="800px" />
+                    <figcaption align="middle">Figure 6.1: Nearest pixel sampling. Supersample rate = 1.</figcaption>
+                </tr>
+                <tr>
+                    <td align="middle">
+                    <img src="images/p6_2.png" width="800px" />
+                    <figcaption align="middle">Figure 6.2: Bilinear pixel interpolation sampling. Supersample rate = 1.</figcaption>
+                </tr>
+                <tr>
+                    <td align="middle">
+                    <img src="images/p6_3.png" width="800px" />
+                    <figcaption align="middle">Figure 6.3: Nearest pixel sampling. Supersample rate = 16.</figcaption>
+                </tr>
+                <tr>
+                    <td align="middle">
+                    <img src="images/p6_4.png" width="800px" />
+                    <figcaption align="middle">Figure 6.4: Bilinear pixel interpolation sampling. Supersample rate = 16.</figcaption>
+                </tr>
+
+            </table>
+        </div>
 
     <h2 align="middle">Part 7: Level sampling with mipmaps for texture mapping</h2>
         <p>Describe what you did in Part 7. Pull some png images from the internet and create your own svg files to demonstrate the strengths and weaknesses of various techniques at different zoom levels. You can take existing files in svg/texmap/ and replace the texture filename to try out new images. Show at least one example (using a png file you find yourself) comparing all four combinations of one of L_ZERO and L_NEAREST with one of P_NEAREST and P_BILINEAR at a zoomed out viewpoint. If you implement any extra filtering methods, describe them and show comparisons.</p>
@@ -80,7 +227,7 @@
     <h2 align="middle">Part 8: My drawing</h2>
         <p>Describe your original drawing and include a picture of it. This part is extremely open ended, and if you decide to devote a lot of time to making an awesome picture, it's worth explaining how you did it!</p>
 
-    <h2 align="middle">A Few Notes On Webpages</h2>
+<!--     <h2 align="middle">A Few Notes On Webpages</h2>
         <p>Here are a few problems students have encountered in the past. You will probably encounter these problems at some point, so don't wait until right before the deadline to check that everything is working. Test your website on the instructional machines early!</p>
         <ul>
         <li>Your main report page should be called index.html.</li>
@@ -90,7 +237,7 @@
         <li>Pay close attention to your filename extensions. Remember that on UNIX systems (such as the instructional machines), capitalization matters. <pre>.png != .jpeg != .jpg != .JPG</pre>
         <li>Be sure to adjust the permissions on your files so that they are world readable. For more information on this please see this tutorial: <a href="http://www.grymoire.com/Unix/Permissions.html">http://www.grymoire.com/Unix/Permissions.html</a></li>
         <li>And again, test your website on the instructional machines early!</li>
-</div>
+</div> -->
 </body>
 </html>
 
