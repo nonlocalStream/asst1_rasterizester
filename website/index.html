@@ -216,7 +216,7 @@
         <p> Use barycentric coordinates to calculate the texel (u,v) on texture space that corresponds to each pixel (x,y) on screen space.
         <p> u and v is originally calculated as float numbers. Nearest pixel sampling choose the texel that's nearest to u and v. Bilinear pixel interpolation sampling linearly interpolate between (floor(u), floor(v)), (floor(u), ceil(v)),(ceil(u), floor(v)),(ceil(u), ceil(v)) using:</p>
         <p align="middle"><pre align="middle">
-        <img src="images/p7_1.png"/ width=500px>
+        <img src="images/p6_0.png"/ width=500px>
         </pre></p>
         <p>In case of texture magnification, a texture image is enlarged on the screen space. The texture image doesn't have enough texels to render a high-resolution screen image. In this case, bilinear pixel interpolation calculate the intermediate color between two texels and thus render a much smoother image than nearest pixel.</p>
         <p>In case of texture minification, the texture image is large enough or has enough resolution. So the two sampling method don't differ much.</p>
@@ -248,7 +248,54 @@
         </div>
 
     <h2 align="middle">Part 7: Level sampling with mipmaps for texture mapping</h2>
-        <p>Describe what you did in Part 7. Pull some png images from the internet and create your own svg files to demonstrate the strengths and weaknesses of various techniques at different zoom levels. You can take existing files in svg/texmap/ and replace the texture filename to try out new images. Show at least one example (using a png file you find yourself) comparing all four combinations of one of L_ZERO and L_NEAREST with one of P_NEAREST and P_BILINEAR at a zoomed out viewpoint. If you implement any extra filtering methods, describe them and show comparisons.</p>
+        <p>Biliear sampling isn't very helpful to antiliasing minified textures. We need to downsample the texture according to how much the texture is minified. This is done by mipmap. The higher level the mipmap, the more the image is blurred and downsampled.</p>
+        <p>The mipmap level D is calculated by:</p>
+        <p align="middle"><pre align="middle">
+        <img src="images/p7_1.png"/ width=500px>
+        <!-- http://cs184.eecs.berkeley.edu/cs184_sp16/lecture/texture/slide_061 -->
+        </pre></p>
+
+        <p>Say the texture mapping function f maps the pixel (x,y) in the screen space to the texel(u,v) in the texture space. Then </p>
+        <p align="middle"><pre align="middle">dx = f(x+1,y)-f(x,y), dy= f(x,y+1)-f(x,y)</pre></p>
+        <p align="middle"><pre align="middle">du/dx = dx_u, du/dy= dy_u, dv/dx = dx_v, dv/dy = dy_v</pre></p>
+        
+        <p>L_LINEAR is basically linear interpolation of the two bilinear sampled pixels from level(floor(D)) and level(ceil(D)). Use:</p>
+        
+        <p align="middle"><pre align="middle">
+        <img src="images/p7_6.png"/ width=500px>
+        </pre></p>
+        
+        <p>Here's a comparison of combinations of different pixel sampling and level sampling methods. 
+        <p>(Photo credit to: http://www.fastcompany.com/3041577/most-innovative-companies-2015/the-worlds-top-10-most-innovative-companies-in-architecture)</p>
+        <div align="left">
+            <table style="width=100%">
+                <tr>
+                    <td align="middle">
+                    <img src="images/p7_2.png" width="800px" />
+                    <figcaption align="middle">Figure 7.2: P_NEAREST+L_ZERO.</figcaption>
+                    <p>Aliasing is obvious for both magnified (jitters) and minified textures (moiré pattern).</p>
+                </tr>
+                <tr>
+                    <td align="middle">
+                    <img src="images/p7_3.png" width="800px" />
+                    <figcaption align="middle">Figure 7.3: P_BILINEAR+L_ZERO.</figcaption>
+                    <p>Artifects reduced for magnified texture but aliasing exists at minified level.</p>
+                </tr>
+                <tr>
+                    <td align="middle">
+                    <img src="images/p7_4.png" width="800px" />
+                    <figcaption align="middle">Figure 7.4: P_NEAREST+L_NEAREST.</figcaption>
+                    <p>Artifects reduced for minified level (no moiré pattern) but still has jittered pattern overall.<p>
+                </tr>
+                <tr>
+                    <td align="middle">
+                    <img src="images/p7_5.png" width="800px" />
+                    <figcaption align="middle">Figure 7.5: P_BILINEAR+L_NEAREST.</figcaption>
+                    <p>Anti-aliasing at both minified and magnified level but the image becomes blurred.</p>
+                </tr>
+
+            </table>
+        </div>
 
     <h2 align="middle">Part 8: My drawing</h2>
         <p>Describe your original drawing and include a picture of it. This part is extremely open ended, and if you decide to devote a lot of time to making an awesome picture, it's worth explaining how you did it!</p>
