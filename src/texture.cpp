@@ -24,15 +24,11 @@ Color Texture::sample(const SampleParams &sp) {
   //return Color();
   switch (sp.lsm) {
       case L_ZERO:
-          //cout << "l_zero" <<endl;
           return (*this.*sample_method)(sp.uv, 0);
       case L_NEAREST:
           level = round(get_level(sp));
-          //cout << "l_nearest" <<endl;
-          //cout << "sample():" << level << endl;
           return (*this.*sample_method)(sp.uv, level);
       case L_LINEAR:
-          //cout << "l_linear" <<endl;
           float lev = get_level(sp);
           level = floor(lev);
           if (level == mipmap.size() -1) {
@@ -54,13 +50,11 @@ float Texture::get_level(const SampleParams &sp) {
   float l2 = sqrt(square(sp.du[1]*width)+square(sp.dv[1]*height));
   float l = (l1 > l2)? l1 :l2;
   float level = log(l)/log(2);
-  //cout << "l:" << l << "log l:" << log(l) << "log2,l:" << level << endl; 
   if (level > mipmap.size()-1)
       level = mipmap.size()-1;
   if (level < 0) {
       level = 0;
   }
-  //cout << "get_level:" << level << endl;
   return level;
 }
 
@@ -70,11 +64,6 @@ Color Texture::get_texel(int x, int y, int level) {
   float g = (float) p[1] / 255.;
   float b = (float) p[2] / 255.;
   float a = (float) p[3] / 255.;
-/*  cout << "r:" << (int) p[0]
-       << " g:" << (int) p[1]
-       << " b:" << (int) p[2] 
-       << " a:" << (int) p[3] << endl;
-       */
   return Color(r,g,b,a);
 
 }
@@ -107,16 +96,20 @@ Color Texture::sample_bilinear(Vector2D uv, int level) {
   
   float x = uv[0] * w;  
   float y = uv[1] * h;
-  int floor_x = (floor(x) < 0)? 0: floor(x);
-  int floor_y = (floor(y) < 0)? 0: floor(y);
-  int ceil_x = (ceil(x) >= w)? w-1: ceil(x);
-  int ceil_y = (ceil(y) >= h)? h-1: ceil(y);
+  if (x < 0) x = 0;
+  if (x > w-1) x = w-1;
+  if (y < 0) y = 0;
+  if (y > h-1) y = h-1;
+  int floor_x = floor(x);
+  int floor_y = floor(y);
+  int ceil_x = ceil(x);
+  int ceil_y = ceil(y);
   Color u00 = get_texel(floor_x, floor_y, level);
   Color u01 = get_texel(floor_x, ceil_y, level);
   Color u10 = get_texel(ceil_x, floor_y, level);
   Color u11 = get_texel(ceil_x, ceil_y, level);
-  float s = x - floor(x);
-  float t = y - floor(y);
+  float s = x - floor_x;
+  float t = y - floor_y;
   Color u0 = lerp(s, u00, u10);
   Color u1 = lerp(s, u01, u11);
   Color u = lerp(t, u0, u1);
